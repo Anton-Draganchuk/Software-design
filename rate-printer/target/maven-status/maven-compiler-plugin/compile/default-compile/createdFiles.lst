@@ -1,0 +1,5 @@
+com/example/printer/JsonRpcRequest.class
+com/example/printer/RatePrinterApplication.class
+com/example/printer/JsonRpcResponse.class
+com/example/printer/RatePrinterJob.class
+com/example/printer/HttpClientConfig.class
