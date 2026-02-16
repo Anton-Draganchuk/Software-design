@@ -1,7 +1,6 @@
 package com.example.printer;
 
 import java.time.LocalDateTime;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -10,23 +9,28 @@ import org.springframework.web.client.RestTemplate;
 public class RatePrinterJob {
 
     private final RestTemplate restTemplate;
-    private final String providerUrl;
+    private final ZooKeeperProviderDiscovery providerDiscovery;
 
     public RatePrinterJob(RestTemplate restTemplate,
-                          @Value("${provider.url}") String providerUrl) {
+                          ZooKeeperProviderDiscovery providerDiscovery) {
         this.restTemplate = restTemplate;
-        this.providerUrl = providerUrl;
+        this.providerDiscovery = providerDiscovery;
     }
 
     @Scheduled(fixedDelay = 5000)
     public void printRate() {
-        JsonRpcRequest request = new JsonRpcRequest("2.0", "getUsdRubRate", null, 1);
-        JsonRpcResponse response = restTemplate.postForObject(providerUrl, request, JsonRpcResponse.class);
+        try {
+            String providerUrl = providerDiscovery.nextProviderUrl();
+            JsonRpcRequest request = new JsonRpcRequest("2.0", "getUsdRubRate", null, 1);
+            JsonRpcResponse response = restTemplate.postForObject(providerUrl, request, JsonRpcResponse.class);
 
-        if (response != null && response.result() != null) {
-            System.out.println(LocalDateTime.now() + " USDRUB=" + response.result());
-        } else {
-            System.out.println(LocalDateTime.now() + " Failed to get rate");
+            if (response != null && response.result() != null) {
+                System.out.println(LocalDateTime.now() + " USDRUB=" + response.result() + " from " + providerUrl);
+            } else {
+                System.out.println(LocalDateTime.now() + " Failed to get rate from " + providerUrl);
+            }
+        } catch (Exception exception) {
+            System.out.println(LocalDateTime.now() + " No available provider instances");
         }
     }
 }
