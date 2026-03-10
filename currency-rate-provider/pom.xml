@@ -17,6 +17,8 @@
 
     <properties>
         <java.version>17</java.version>
+        <pact.version>4.3.15</pact.version>
+        <pactbroker.url>http://localhost:9292</pactbroker.url>
     </properties>
 
     <dependencies>
@@ -29,6 +31,17 @@
             <artifactId>curator-framework</artifactId>
             <version>5.7.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>au.com.dius.pact.provider</groupId>
+            <artifactId>junit5spring</artifactId>
+            <version>${pact.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -36,6 +49,17 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <pactbroker.url>${pactbroker.url}</pactbroker.url>
+                        <pact.verifier.publishResults>true</pact.verifier.publishResults>
+                        <pact.provider.version>${project.version}</pact.provider.version>
+                        <pact_do_not_track>true</pact_do_not_track>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>

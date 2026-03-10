@@ -1,0 +1,39 @@
+services:
+  zookeeper:
+    image: zookeeper:3.9
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+
+  pact-broker-db:
+    image: postgres:16-alpine
+    container_name: pact-broker-db
+    environment:
+      POSTGRES_DB: pactbroker
+      POSTGRES_USER: pactbroker
+      POSTGRES_PASSWORD: pactbroker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pactbroker -d pactbroker"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - pact-broker-db-data:/var/lib/postgresql/data
+
+  pact-broker:
+    image: pactfoundation/pact-broker:latest
+    container_name: pact-broker
+    depends_on:
+      pact-broker-db:
+        condition: service_healthy
+    environment:
+      PACT_BROKER_DATABASE_URL: postgres://pactbroker:pactbroker@pact-broker-db:5432/pactbroker
+      PACT_BROKER_BASE_URL: http://localhost:9292
+      PACT_BROKER_LOG_LEVEL: INFO
+      PACT_BROKER_SQL_LOG_LEVEL: WARN
+      PACT_BROKER_DATABASE_CONNECT_MAX_RETRIES: 10
+    ports:
+      - "9292:9292"
+
+volumes:
+  pact-broker-db-data:
