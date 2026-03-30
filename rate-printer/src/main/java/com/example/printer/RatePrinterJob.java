@@ -1,12 +1,16 @@
 package com.example.printer;
 
 import java.time.LocalDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 @Component
 public class RatePrinterJob {
+
+    private static final Logger log = LoggerFactory.getLogger(RatePrinterJob.class);
 
     private final RestTemplate restTemplate;
     private final ZooKeeperProviderDiscovery providerDiscovery;
@@ -25,12 +29,12 @@ public class RatePrinterJob {
             JsonRpcResponse response = restTemplate.postForObject(providerUrl, request, JsonRpcResponse.class);
 
             if (response != null && response.result() != null) {
-                System.out.println(LocalDateTime.now() + " USDRUB=" + response.result() + " from " + providerUrl);
+                log.info("{} USDRUB={} from {}", LocalDateTime.now(), response.result(), providerUrl);
             } else {
-                System.out.println(LocalDateTime.now() + " Failed to get rate from " + providerUrl);
+                log.warn("{} Failed to get rate from {}", LocalDateTime.now(), providerUrl);
             }
         } catch (Exception exception) {
-            System.out.println(LocalDateTime.now() + " No available provider instances");
+            log.error("{} No available provider instances", LocalDateTime.now(), exception);
         }
     }
 }

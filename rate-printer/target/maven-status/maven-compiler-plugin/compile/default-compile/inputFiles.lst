@@ -1,6 +1,9 @@
+/Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/rate-printer/src/main/java/com/example/printer/ApplicationVersionLogger.java
+/Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/rate-printer/src/main/java/com/example/printer/ClientHttpLoggingInterceptor.java
 /Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/rate-printer/src/main/java/com/example/printer/HttpClientConfig.java
 /Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/rate-printer/src/main/java/com/example/printer/JsonRpcRequest.java
 /Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/rate-printer/src/main/java/com/example/printer/JsonRpcResponse.java
 /Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/rate-printer/src/main/java/com/example/printer/RatePrinterApplication.java
 /Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/rate-printer/src/main/java/com/example/printer/RatePrinterJob.java
+/Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/rate-printer/src/main/java/com/example/printer/ReusableClientHttpResponse.java
 /Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/rate-printer/src/main/java/com/example/printer/ZooKeeperProviderDiscovery.java
