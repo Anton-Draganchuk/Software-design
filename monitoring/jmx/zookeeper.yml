@@ -1,0 +1,23 @@
+startDelaySeconds: 0
+hostPort: zookeeper:7071
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  - pattern: 'java.lang<type=Memory><HeapMemoryUsage>(used|committed|max):'
+    name: zookeeper_jvm_memory_$1_bytes
+    labels:
+      area: heap
+  - pattern: 'java.lang<type=Memory><NonHeapMemoryUsage>(used|committed|max):'
+    name: zookeeper_jvm_memory_$1_bytes
+    labels:
+      area: nonheap
+  - pattern: 'java.lang<type=Threading><>(threadcount|daemonthreadcount|peakthreadcount):'
+    name: zookeeper_jvm_threads_$1
+  - pattern: 'java.lang<type=GarbageCollector,name=(.+)><>(collectioncount|collectiontime):'
+    name: zookeeper_jvm_gc_$2
+    labels:
+      gc: "$1"
+  - pattern: 'org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(packetsreceived|packetssent|numaliveconnections|outstandingrequests):'
+    name: zookeeper_$2
+    labels:
+      port: "$1"

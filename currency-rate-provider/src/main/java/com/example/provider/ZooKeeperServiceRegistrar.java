@@ -47,7 +47,9 @@ public class ZooKeeperServiceRegistrar {
             client.blockUntilConnected();
 
             String instancesPath = basePath + "/" + serviceName + "/instances";
-            client.create().creatingParentsIfNeeded().forPath(instancesPath);
+            if (client.checkExists().forPath(instancesPath) == null) {
+                client.create().creatingParentsIfNeeded().forPath(instancesPath);
+            }
 
             String instanceUrl = "http://" + host + ":" + port + rpcPath;
             registeredNodePath = client.create()

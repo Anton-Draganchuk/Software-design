@@ -1,6 +1,8 @@
+/Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/currency-rate-provider/src/main/java/com/example/provider/ApplicationVersionLogger.java
 /Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/currency-rate-provider/src/main/java/com/example/provider/CurrencyRateProviderApplication.java
 /Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/currency-rate-provider/src/main/java/com/example/provider/JsonRpcController.java
 /Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/currency-rate-provider/src/main/java/com/example/provider/JsonRpcRequest.java
 /Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/currency-rate-provider/src/main/java/com/example/provider/JsonRpcResponse.java
+/Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/currency-rate-provider/src/main/java/com/example/provider/LoggingAndMetricsFilter.java
 /Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/currency-rate-provider/src/main/java/com/example/provider/RateService.java
 /Users/antondraganchuk/Desktop/Computer_Science/Магистратура/Softwear/Software-design/currency-rate-provider/src/main/java/com/example/provider/ZooKeeperServiceRegistrar.java
