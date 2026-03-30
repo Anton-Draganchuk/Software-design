@@ -60,7 +60,9 @@ services:
     container_name: zookeeper-jmx-exporter
     depends_on:
       - zookeeper
-    command: ["9404", "/config/zookeeper.yml"]
+    environment:
+      SERVICE_PORT: 9404
+      CONFIG_YML: /config/zookeeper.yml
     volumes:
       - ./monitoring/jmx/zookeeper.yml:/config/zookeeper.yml:ro
     ports:

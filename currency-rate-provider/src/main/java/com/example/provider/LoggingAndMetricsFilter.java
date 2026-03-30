@@ -11,9 +11,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.server.ResponseStatusException;
@@ -28,10 +30,10 @@ public class LoggingAndMetricsFilter extends OncePerRequestFilter {
     private static final String REQUEST_METRIC = "rpc.server.requests";
     private static final String ERROR_METRIC = "rpc.server.errors";
 
-    private final MeterRegistry meterRegistry;
+    private final Optional<MeterRegistry> meterRegistry;
 
-    public LoggingAndMetricsFilter(MeterRegistry meterRegistry) {
-        this.meterRegistry = meterRegistry;
+    public LoggingAndMetricsFilter(ObjectProvider<MeterRegistry> meterRegistryProvider) {
+        this.meterRegistry = Optional.ofNullable(meterRegistryProvider.getIfAvailable());
     }
 
     @Override
@@ -45,7 +47,7 @@ public class LoggingAndMetricsFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         ContentCachingRequestWrapper requestWrapper = new ContentCachingRequestWrapper(request);
         ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(response);
-        Timer.Sample sample = Timer.start(meterRegistry);
+        Timer.Sample sample = meterRegistry.map(Timer::start).orElse(null);
         String clientName = resolveClientName(request);
         int status = HttpStatus.INTERNAL_SERVER_ERROR.value();
 
@@ -64,6 +66,10 @@ public class LoggingAndMetricsFilter extends OncePerRequestFilter {
     }
 
     private void recordMetrics(HttpServletRequest request, String clientName, int status, Timer.Sample sample) {
+        if (meterRegistry.isEmpty() || sample == null) {
+            return;
+        }
+
         List<Tag> tags = List.of(
                 Tag.of("client", clientName),
                 Tag.of("method", request.getMethod()),
@@ -75,13 +81,13 @@ public class LoggingAndMetricsFilter extends OncePerRequestFilter {
                 .description("JSON-RPC request processing time")
                 .publishPercentileHistogram()
                 .tags(tags)
-                .register(meterRegistry));
+                .register(meterRegistry.orElseThrow()));
 
         if (status >= 500) {
             Counter.builder(ERROR_METRIC)
                     .description("Server-side 500 responses")
                     .tags(tags)
-                    .register(meterRegistry)
+                    .register(meterRegistry.orElseThrow())
                     .increment();
         }
     }
