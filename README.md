@@ -8,37 +8,153 @@
 - `Pact Broker` - хранение consumer-контрактов
 - `Prometheus + Grafana` - сбор и визуализация метрик
 
-## Что добавлено
+## Что реализовано
 
-- Spring Boot Actuator и Prometheus registry в оба приложения
-- логирование входящего запроса и ответа на provider
-- логирование исходящего запроса и ответа на client
+- Actuator и Prometheus registry в обоих приложениях
+- логирование request/response на provider и client только в `stdout`
 - лог версии приложения при старте
 - кастомные серверные метрики:
-  - `rpc_server_requests_seconds_*` для RPS и времени обработки
-  - `rpc_server_errors_total` для количества `500`
-- готовый `Grafana` dashboard для `client`, `service1`, `service2` и `zookeeper`
-- экспорт метрик ZooKeeper через `JMX Exporter`
+  - `rpc_server_requests_seconds_*`
+  - `rpc_server_errors_total`
+- Grafana dashboard для `client`, `service1`, `service2` и `zookeeper`
+- ZooKeeper metrics через `JMX Exporter`
+- разделение `build -> release -> run`
+- `dev` и `prod` parity через одни и те же артефакты и разные env-файлы
+- graceful shutdown для Spring-сервисов и Docker-контейнеров
+
+## 12-factor изменения
+
+### V. Build, release, run
+
+Стадии разделены:
+
+- `scripts/build.sh` - собирает jar-артефакты
+- `scripts/release.sh <env-file>` - собирает runtime-образы из уже готовых jar
+- `scripts/run.sh <env-file>` - запускает готовый release
+
+Dockerfile больше не компилирует исходники. Он только упаковывает уже собранный jar в runtime-образ.
+
+### IX. Disposability
+
+- включён `server.shutdown=graceful`
+- настроен `spring.lifecycle.timeout-per-shutdown-phase=20s`
+- для `rate-printer` включено ожидание завершения scheduler-задач при остановке
+- в `docker-compose.yml` добавлен `stop_grace_period: 20s`
+
+### X. Dev/prod parity
+
+- один и тот же jar и один и тот же Dockerfile используются и в `dev`, и в `prod`
+- различия между окружениями вынесены в env-файлы:
+  - `env/dev.env`
+  - `env/prod.env`
+- профиль Spring выбирается через `SPRING_PROFILES_ACTIVE`
+
+### XI. Logs
+
+- оба приложения логируют только в `stdout`
+- файловых appender'ов нет
+- для этого добавлены явные `logback-spring.xml`
+
+## Build / Release / Run
+
+### 1. Build
+
+Сборка jar-артефактов:
+
+```bash
+./scripts/build.sh
+```
+
+Или вручную:
+
+```bash
+mvn -DskipTests clean package
+```
+
+### 2. Release
+
+Сборка runtime-образов для выбранного окружения:
+
+```bash
+./scripts/release.sh env/dev.env
+```
+
+или
+
+```bash
+./scripts/release.sh env/prod.env
+```
+
+### 3. Run
+
+Запуск уже собранного release:
+
+```bash
+./scripts/run.sh env/dev.env
+```
+
+или
+
+```bash
+./scripts/run.sh env/prod.env
+```
+
+Если нужен старый краткий сценарий, он тоже работает после build-шага:
+
+```bash
+docker compose --env-file env/dev.env up -d
+```
+
+## Конфигурация окружений
+
+Шаблон переменных лежит в:
+
+```bash
+.env.example
+```
+
+Основные env-файлы:
+
+- `env/dev.env`
+- `env/prod.env`
+
+Сейчас различие минимальное и контролируемое:
+
+- `dev` использует профиль `dev`
+- `prod` использует профиль `prod`
+
+Остальные адреса, порты и runtime-параметры также настраиваются только через env.
 
 ## Метрики
 
 На provider считаются метрики из задания:
 
-- количество запросов в секунду с разбивкой по клиенту (`client` tag из header `X-Client-Name`)
+- количество запросов в секунду с разбивкой по клиенту
 - количество ответов `500`
 - время обработки запроса:
   - среднее
   - медиана `p50`
   - `p95`
 
-Все Spring-сервисы также публикуют стандартные JVM метрики Micrometer через `/actuator/prometheus`.
+Все Spring-сервисы также публикуют стандартные JVM метрики через `/actuator/prometheus`.
+
+## Actuator endpoints
+
+У каждого Spring-сервиса включены:
+
+- `/actuator/health`
+- `/actuator/info`
+- `/actuator/metrics`
+- `/actuator/prometheus`
 
 ## Запуск полного стенда
 
-Полный стенд поднимается одной командой:
+Рекомендуемый сценарий:
 
 ```bash
-docker compose up --build -d
+./scripts/build.sh
+./scripts/release.sh env/dev.env
+./scripts/run.sh env/dev.env
 ```
 
 После старта будут доступны:
@@ -69,15 +185,6 @@ Dashboard provisioning уже настроен. После запуска отк
 - JVM heap и threads для `client`, `service1`, `service2`
 - базовых ZooKeeper и ZooKeeper JVM метрик
 
-## Actuator endpoints
-
-У каждого Spring-сервиса включены:
-
-- `/actuator/health`
-- `/actuator/info`
-- `/actuator/metrics`
-- `/actuator/prometheus`
-
 ## Контрактный цикл
 
 1. Сгенерировать consumer pact:
@@ -97,29 +204,23 @@ Dashboard provisioning уже настроен. После запуска отк
 
 ## Локальный запуск без Docker
 
-1. Поднимите только инфраструктуру:
+1. Поднимите инфраструктуру:
    ```bash
-   docker compose up -d zookeeper pact-broker-db pact-broker prometheus grafana zookeeper-jmx-exporter
+   docker compose --env-file env/dev.env up -d zookeeper pact-broker-db pact-broker prometheus grafana zookeeper-jmx-exporter
    ```
 
-2. Соберите проект:
+2. Соберите jar:
    ```bash
-   mvn -DskipTests package
+   ./scripts/build.sh
    ```
 
 3. Запустите provider instances:
    ```bash
-   java -jar currency-rate-provider/target/currency-rate-provider-1.0.0.jar --spring.application.name=service1 --server.port=8080
-   java -jar currency-rate-provider/target/currency-rate-provider-1.0.0.jar --spring.application.name=service2 --server.port=8082
+   java -jar currency-rate-provider/target/currency-rate-provider-1.0.0.jar --spring.profiles.active=dev --spring.application.name=service1 --server.port=8080
+   java -jar currency-rate-provider/target/currency-rate-provider-1.0.0.jar --spring.profiles.active=dev --spring.application.name=service2 --server.port=8082
    ```
 
 4. Запустите client:
    ```bash
-   java -jar rate-printer/target/rate-printer-1.0.0.jar --spring.application.name=client --server.port=8081
+   java -jar rate-printer/target/rate-printer-1.0.0.jar --spring.profiles.active=dev --spring.application.name=client --server.port=8081
    ```
-
-## Замечания по логированию
-
-- provider логирует request/response для всех рабочих endpoint'ов, кроме `/actuator/**`
-- client добавляет header `X-Client-Name`, чтобы серверные метрики можно было строить по вызывающему клиенту
-- версия приложения логируется при старте через `build-info`

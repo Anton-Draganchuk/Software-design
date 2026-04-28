@@ -1,0 +1,14 @@
+<configuration>
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="rate-printer"/>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%-5level app=%property{appName} thread=%thread logger=%logger{36} msg=%msg%n%ex</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
