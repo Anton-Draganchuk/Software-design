@@ -5,43 +5,57 @@ services:
     environment:
       JMXPORT: 7071
       JMXHOST: 0.0.0.0
+    stop_grace_period: 20s
     ports:
-      - "2181:2181"
+      - "${ZOOKEEPER_PORT:-2181}:2181"
 
   service1:
+    image: ${SERVICE1_IMAGE:-software-design-service1}:${APP_VERSION:-1.0.0}
     build:
       context: .
       dockerfile: currency-rate-provider/Dockerfile
+      args:
+        APP_JAR: currency-rate-provider/target/currency-rate-provider-${APP_VERSION:-1.0.0}.jar
     container_name: service1
     depends_on:
       - zookeeper
     environment:
       SPRING_APPLICATION_NAME: service1
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       SERVER_PORT: 8080
       PROVIDER_HOST: service1
-      SERVICE_REGISTRY_CONNECT_STRING: zookeeper:2181
+      SERVICE_REGISTRY_CONNECT_STRING: ${SERVICE_REGISTRY_CONNECT_STRING:-zookeeper:2181}
+    stop_grace_period: 20s
     ports:
-      - "8080:8080"
+      - "${SERVICE1_PORT:-8080}:8080"
 
   service2:
+    image: ${SERVICE2_IMAGE:-software-design-service2}:${APP_VERSION:-1.0.0}
     build:
       context: .
       dockerfile: currency-rate-provider/Dockerfile
+      args:
+        APP_JAR: currency-rate-provider/target/currency-rate-provider-${APP_VERSION:-1.0.0}.jar
     container_name: service2
     depends_on:
       - zookeeper
     environment:
       SPRING_APPLICATION_NAME: service2
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       SERVER_PORT: 8082
       PROVIDER_HOST: service2
-      SERVICE_REGISTRY_CONNECT_STRING: zookeeper:2181
+      SERVICE_REGISTRY_CONNECT_STRING: ${SERVICE_REGISTRY_CONNECT_STRING:-zookeeper:2181}
+    stop_grace_period: 20s
     ports:
-      - "8082:8082"
+      - "${SERVICE2_PORT:-8082}:8082"
 
   client:
+    image: ${CLIENT_IMAGE:-software-design-client}:${APP_VERSION:-1.0.0}
     build:
       context: .
       dockerfile: rate-printer/Dockerfile
+      args:
+        APP_JAR: rate-printer/target/rate-printer-${APP_VERSION:-1.0.0}.jar
     container_name: client
     depends_on:
       - zookeeper
@@ -49,11 +63,13 @@ services:
       - service2
     environment:
       SPRING_APPLICATION_NAME: client
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       SERVER_PORT: 8081
       RATE_PRINTER_CLIENT_NAME: client
-      SERVICE_REGISTRY_CONNECT_STRING: zookeeper:2181
+      SERVICE_REGISTRY_CONNECT_STRING: ${SERVICE_REGISTRY_CONNECT_STRING:-zookeeper:2181}
+    stop_grace_period: 20s
     ports:
-      - "8081:8081"
+      - "${CLIENT_PORT:-8081}:8081"
 
   zookeeper-jmx-exporter:
     image: sscaling/jmx-prometheus-exporter:latest
@@ -63,10 +79,11 @@ services:
     environment:
       SERVICE_PORT: 9404
       CONFIG_YML: /config/zookeeper.yml
+    stop_grace_period: 20s
     volumes:
       - ./monitoring/jmx/zookeeper.yml:/config/zookeeper.yml:ro
     ports:
-      - "9404:9404"
+      - "${ZOOKEEPER_EXPORTER_PORT:-9404}:9404"
 
   prometheus:
     image: prom/prometheus:latest
@@ -78,22 +95,24 @@ services:
       - zookeeper-jmx-exporter
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
+    stop_grace_period: 20s
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_PORT:-9090}:9090"
 
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     depends_on:
       - prometheus
+    stop_grace_period: 20s
     volumes:
       - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports:
-      - "3000:3000"
+      - "${GRAFANA_PORT:-3000}:3000"
 
   pact-broker-db:
     image: postgres:16-alpine
@@ -107,6 +126,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+    stop_grace_period: 20s
     volumes:
       - pact-broker-db-data:/var/lib/postgresql/data
 
@@ -118,12 +138,13 @@ services:
         condition: service_healthy
     environment:
       PACT_BROKER_DATABASE_URL: postgres://pactbroker:pactbroker@pact-broker-db:5432/pactbroker
-      PACT_BROKER_BASE_URL: http://localhost:9292
+      PACT_BROKER_BASE_URL: http://localhost:${PACT_BROKER_PORT:-9292}
       PACT_BROKER_LOG_LEVEL: INFO
       PACT_BROKER_SQL_LOG_LEVEL: WARN
       PACT_BROKER_DATABASE_CONNECT_MAX_RETRIES: 10
+    stop_grace_period: 20s
     ports:
-      - "9292:9292"
+      - "${PACT_BROKER_PORT:-9292}:9292"
 
 volumes:
   pact-broker-db-data:

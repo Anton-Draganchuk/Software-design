@@ -1,6 +1,8 @@
 com/example/provider/CurrencyRateProviderApplication.class
+com/example/provider/LoggingAndMetricsFilter.class
+com/example/provider/ApplicationVersionLogger.class
 com/example/provider/JsonRpcResponse.class
+com/example/provider/ZooKeeperServiceRegistrar.class
 com/example/provider/JsonRpcController.class
 com/example/provider/JsonRpcRequest.class
 com/example/provider/RateService.class
-com/example/provider/ZooKeeperServiceRegistrar.class
